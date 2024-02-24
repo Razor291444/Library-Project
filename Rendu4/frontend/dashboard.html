@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bibliothèque UTC</title>
+    <link rel="shortcut icon" href="./img/sigle-utc.png" type="image/x-icon">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+
+<body class="bg-gray-100" style="overflow: hidden;">
+
+    <nav class="bg-blue-500 p-4 flex items-center justify-between">
+        <div class="flex items-center">
+            <img src="./img/sigle-utc.png" alt="UTC Logo" class="w-16 mr-1">
+            <a href="#" class="text-white text-3xl font-bold ml-5" onclick="changeLink('catalog')">Catalogue</a>
+            <a href="#" id="adherentsLink" class="text-white text-3xl font-bold ml-5 hidden" onclick="changeLink('adherents')">Adhérents</a>
+            <a href="#" id="createAccountLink" class="text-white text-3xl font-bold ml-5 hidden" onclick="changeLink('creer_adh')">Créer Compte</a>
+        </div>
+        <div class="flex items-center ml-auto">
+            <img src="https://static.thenounproject.com/png/3069450-200.png" alt="User Icon" class="w-8 inline-block mr-2" style="filter: invert(100%)">
+            <span id="userFullName" class="text-white text-xl font-semibold mr-2"></span>
+            <a href="#" onclick="logout()">
+                <img src="https://cdn.icon-icons.com/icons2/1769/PNG/512/4115235-exit-logout-sign-out_114030.png" alt="Logout Icon" class="w-6" style="filter: invert(100%)">
+            </a>
+        </div>
+    </nav>
+
+    <div class="container mx-auto max-w-full">
+        <iframe id="mainFrame" src="./views/catalog.html" frameborder="0" class="w-full h-screen"></iframe>
+    </div>
+
+    <script>
+        let LienActif = 'catalog';
+
+        function getUserInfo() {
+            const login = sessionStorage.getItem('login');
+            const access_token = sessionStorage.getItem('access_token');
+
+            if (!login || !access_token) {
+                window.location.href = './login.html';
+                return;
+            }
+
+            fetch(`http://localhost:5000/get-user-infos?login=${login}`, {
+                headers: {
+                    Authorization: `Bearer ${access_token}`
+                }
+            })
+                .then(response => {
+                    if (response.ok) {
+                        return response.json();
+                    } else if (response.status === 400) {
+                        window.location.href = './login.html';
+                    } else if (response.status === 401) {
+                        window.location.href = './login.html';
+                    } else {
+                        window.location.href = './login.html';
+                    }
+                })
+                .then(data => {
+                    document.getElementById('userFullName').textContent = `${data.prenom} ${data.nom} - ${data.type}`;
+                    sessionStorage.setItem('userType', data.type);
+                    checkUserType(data.type);
+                })
+                .catch(error => {
+                    console.error(error.message);
+                });
+        }
+
+        function logout() {
+            sessionStorage.removeItem('login');
+            sessionStorage.removeItem('access_token');
+            window.location.href = './login.html';
+        }
+
+        function changeLink(link) {
+            LienActif = link;
+            document.getElementById('mainFrame').src = `./views/${link}.html`;
+            highlightActiveLink();
+        }
+
+        function highlightActiveLink() {
+            const links = ['catalog', 'adherents'];
+            links.forEach(link => {
+                const linkElement = document.querySelector(`a[onclick="changeLink('${link}')"]`);
+                if (link === LienActif) {
+                    linkElement.classList.add('underline');
+                } else {
+                    linkElement.classList.remove('underline');
+                }
+            });
+        }
+
+        function checkUserType(userType) {
+            const adherentsLink = document.getElementById('adherentsLink');
+            const createAccountLink = document.getElementById('createAccountLink');
+
+            if (userType === 'Personnel' || userType === 'Administrateur') {
+                adherentsLink.classList.remove('hidden');
+                createAccountLink.classList.remove('hidden');
+
+            } else {
+                adherentsLink.classList.add('hidden');
+                createAccountLink.classList.add('hidden');
+            }
+        }
+
+        window.addEventListener('load', () => {
+            getUserInfo();
+            highlightActiveLink();
+        });
+    </script>
+
+</body>
+
+</html>

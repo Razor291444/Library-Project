@@ -1,0 +1,16 @@
+FROM alpine:latest
+
+# Install python
+RUN apk add --update python3 py3-pip postgresql-dev python3-dev gcc musl-dev
+
+# Copy files
+COPY . /app
+
+# Set working directory
+WORKDIR /app
+
+# Install dependencies
+RUN pip3 install --break-system-packages -r requirements.txt
+
+# Run the flask app
+CMD ["python3", "app.py"]
